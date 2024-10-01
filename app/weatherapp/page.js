@@ -1,17 +1,38 @@
 'use client';
 
 import { useState } from 'react';
-import { fetchWeatherData } from '../../lib/weather';
+import { fetchWeatherData } from '../../lib/weather'; // Certifique-se de que esta função retorna os dados corretamente
+import { Line } from 'react-chartjs-2';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+} from 'chart.js';
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+);
 
 const weatherImages = {
-    clear: 'https://media3.giphy.com/media/0Styincf6K2tvfjb5Q/200w.gif?cid=6c09b952pco852lzc2u1qwqf3m9su8twcmclfaju16ve4b39&ep=v1_gifs_search&rid=200w.gif&ct=g',
+    clear: 'https://media3.giphy.com/media/0Styincf6K2tvfjb5Q/200w.gif',
     clouds: 'https://media.tenor.com/YhQV3T7bjXwAAAAM/heaven-cloud.gif',
-    rain: 'https://steamuserimages-a.akamaihd.net/ugc/502525219771484502/EF1064390409CCB6004C821540DE28B51A1D3B91/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false',
+    rain: 'https://steamuserimages-a.akamaihd.net/ugc/502525219771484502/EF1064390409CCB6004C821540DE28B51A1D3B91/',
     snow: 'https://i.pinimg.com/originals/13/36/0f/13360fb8f656e2b02429d3828da7441d.gif',
     thunderstorm: 'https://media.tenor.com/uToSLPDUN44AAAAM/lightning-nature.gif',
     mist: 'https://i.pinimg.com/originals/77/42/24/77422432ef2ee5f1ffbd8828b1bca3b9.gif',
     drizzle: 'https://i.pinimg.com/originals/87/eb/d9/87ebd96d079b1737b97f2b3847da9d47.gif',
-    smoke: 'https://i.pinimg.com/originals/67/e7/80/67e7804a3864631c7291558a76be1ffb.gif', // Adicionado
+    smoke: 'https://i.pinimg.com/originals/67/e7/80/67e7804a3864631c7291558a76be1ffb.gif',
 };
 
 const weatherIcons = {
@@ -21,8 +42,8 @@ const weatherIcons = {
     snow: 'https://www.freeiconspng.com/thumbs/snow-icon/blue-snow-icon-8.png',
     thunderstorm: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT62YH4f_RqhzJm0_1YT7LVOk0QOaWTVauGuw&s',
     mist: 'https://cdn4.iconfinder.com/data/icons/heavy-weather/100/Weather_Icons_39_moon_fog-512.png',
-    drizzle: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQeWao5P99YB8sIWWnUqGS5LDaTTqYe9qBcSQ&s',
-    smoke: 'https://cdn-icons-png.flaticon.com/512/4414/4414055.png' // Adicionado
+    drizzle: 'https://encrypted-tbn.com/images?q=tbn:ANd9GcQeWao5P99YB8sIWWnUqGS5LDaTTqYe9qBcSQ&s',
+    smoke: 'https://cdn-icons-png.flaticon.com/512/4414/4414055.png',
 };
 
 const weatherBorders = {
@@ -33,7 +54,7 @@ const weatherBorders = {
     thunderstorm: '5px solid purple',
     mist: '5px solid silver',
     drizzle: '5px solid lightblue',
-    smoke: '5px solid darkgray', // Adicionado
+    smoke: '5px solid darkgray',
 };
 
 const weatherColors = {
@@ -44,7 +65,7 @@ const weatherColors = {
     thunderstorm: '#800080',
     mist: '#C0C0C0',
     drizzle: '#87CEEB',
-    smoke: '#A9A9A9', // Adicionado
+    smoke: '#A9A9A9',
 };
 
 const weatherGlowEffects = {
@@ -55,7 +76,7 @@ const weatherGlowEffects = {
     thunderstorm: '0 0 30px purple, 0 0 60px purple',
     mist: '0 0 20px silver, 0 0 40px silver',
     drizzle: '0 0 30px lightblue, 0 0 60px lightblue',
-    smoke: '0 0 30px darkgray, 0 0 60px darkgray', // Adicionado
+    smoke: '0 0 30px darkgray, 0 0 60px darkgray',
 };
 
 export default function WeatherPage() {
@@ -75,6 +96,34 @@ export default function WeatherPage() {
         }
         setLoading(false);
     };
+
+    const prepareChartData = () => {
+        if (!weatherData || !weatherData.forecast) return null;
+
+        const forecastList = weatherData.forecast.list.filter((_, index) => index % 8 === 0).slice(0, 5);
+        
+        const dates = forecastList.map((item) => {
+            const date = new Date(item.dt * 1000);
+            return `${date.getDate()}/${date.getMonth() + 1}`;
+        });
+        
+        const temps = forecastList.map((item) => item.main.temp);
+
+        return {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Temperatura (°C)',
+                    data: temps.map(temp => (temp - 273.15).toFixed(1)), // Convertendo de Kelvin para Celsius
+                    fill: false,
+                    backgroundColor: 'rgba(75,192,192,0.4)',
+                    borderColor: 'rgba(75,192,192,1)',
+                }
+            ]
+        };
+    };
+
+    const chartData = prepareChartData();
 
     const getWeatherImage = (weather) => {
         if (!weather || !weather[0]) return null;
@@ -116,7 +165,7 @@ export default function WeatherPage() {
             justifyContent: 'center',
             alignItems: 'center',
             color: 'white',
-            fontFamily: 'Bradley Hand, cursive', // Aplicando a fonte
+            fontFamily: 'Bradley Hand, cursive',
         }}>
             <h1 style={{ textAlign: 'center' }}>Busque a previsão do tempo</h1>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
@@ -176,16 +225,33 @@ export default function WeatherPage() {
                     <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <img
                             src={getWeatherIcon(weatherData.weather)} 
-                            alt={weatherData.weather[0].description}
+                            alt={weatherData.weather && weatherData.weather[0] ? weatherData.weather[0].description : 'Condição do tempo'}
                             style={{ width: '80px', height: '80px', marginBottom: '10px' }}
                         />
                         <p style={{ margin: '0', fontSize: '6em', fontWeight: 'bold' }}>
-                            {weatherData.main.temp.toFixed(1)}°C
+                            {weatherData.main && weatherData.main.temp ? weatherData.main.temp.toFixed(1) : 'N/A'}°C
+                        </p>
+                        <p style={{ fontSize: '2em', margin: '10px 0' }}>
+                            Condição: {weatherData.weather && weatherData.weather[0] ? weatherData.weather[0].description : 'Indisponível'}
                         </p>
                     </div>
                     <h2 style={{ marginTop: '20px', marginBottom: '0', fontSize: '2.5em' }}>{weatherData.name}</h2>
+
+                    <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>
+                        Previsão dos próximos dias para {weatherData.name}
+                    </h3>
                 </div>
             )}
+
+            {chartData && (
+                <div style={{ width: '600px', marginTop: '20px' }}>
+                    <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>
+                        Previsão dos próximos dias para {weatherData.name}
+                    </h3>
+                    <Line data={chartData} />
+                </div>
+            )}
+
             <style jsx>{`
                 @keyframes pulse {
                     0% {
